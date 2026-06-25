@@ -1,128 +1,72 @@
 <?php
-// FILE: index.php
-
-require_once 'database.php';
-require_once 'MahasiswaMandiri.php';
-require_once 'MahasiswaBidikmisi.php';
-require_once 'MahasiswaPrestasi.php';
-
-$db = new Database();
-
-// 1. SATU QUERY UNTUK SEMUA: Mengambil seluruh data mahasiswa secara dinamis
-$query = "SELECT * FROM tabel_mahasiswa";
-$result = $db->conn->query($query);
-
-// 2. SATU ARRAY TUNGGAL: Semua jenis mahasiswa disatukan di sini (Prinsip Polimorfisme)
-$daftarMahasiswa = [];
-
-if ($result && $result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        // Objek dibuat secara dinamis berdasarkan kolom jenis_pembayaran
-        if ($row['jenis_pembayaran'] == 'mandiri') {
-            $daftarMahasiswa[] = new MahasiswaMandiri(
-                $row['id_mahasiswa'], $row['nama_mahasiswa'], $row['nim'], $row['semester'], $row['tarif_ukt_nominal'],
-                $row['golongan_ukt'], $row['nama_wali']
-            );
-        } elseif ($row['jenis_pembayaran'] == 'bidikmisi') {
-            $daftarMahasiswa[] = new MahasiswaBidikmisi(
-                $row['id_mahasiswa'], $row['nama_mahasiswa'], $row['nim'], $row['semester'], $row['tarif_ukt_nominal'],
-                $row['nomor_kip_kuliah'], $row['dana_saku_subsidi']
-            );
-        } elseif ($row['jenis_pembayaran'] == 'prestasi') {
-            $daftarMahasiswa[] = new MahasiswaPrestasi(
-                $row['id_mahasiswa'], $row['nama_mahasiswa'], $row['nim'], $row['semester'], $row['tarif_ukt_nominal'],
-                $row['nama_instansi_beasiswa'], $row['minimal_ipk_bersyarat']
-            );
-        }
-    }
-}
+// FILE: index.php (Master Dashboard Template)
+// Mengambil parameter page dari URL secara dinamis (contoh: index.php?page=mandiri)
+$page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Registrasi Pembayaran UKT - Polimorfisme Murni</title>
+    <title>Dashboard Registrasi UKT Mahasiswa</title>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; padding: 30px; margin: 0; color: #1e293b; }
-        .container { max-width: 1200px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #0f172a; margin-bottom: 5px; }
-        .identitas { text-align: center; color: #64748b; font-size: 1.1em; margin-bottom: 40px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #ffffff; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f1f5f9; margin: 0; display: flex; height: 100vh; color: #1e293b; }
+        /* SIDEBAR NAVIGASI */
+        .sidebar { width: 260px; background-color: #1e293b; color: white; padding: 20px; box-sizing: border-box; }
+        .sidebar h3 { margin-bottom: 25px; font-size: 1.2em; text-align: center; color: #3b82f6; }
+        .sidebar a { display: block; color: #cbd5e1; padding: 12px 15px; text-decoration: none; border-radius: 6px; margin-bottom: 8px; font-weight: 500; }
+        .sidebar a:hover { background-color: #334155; color: white; }
+        .sidebar a.active { background-color: #3b82f6; color: white; }
+        
+        /* KONTEN UTAMA */
+        .main-content { flex: 1; padding: 40px; box-sizing: border-box; overflow-y: auto; }
+        .header-panel { background: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .content-box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        
+        /* STYLE TABEL */
+        h2 { border-left: 5px solid #3b82f6; padding-left: 10px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 14px; border-bottom: 1px solid #e2e8f0; text-align: left; }
-        th { background-color: #1e293b; color: white; font-weight: 600; }
+        th { background-color: #f8fafc; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.85em; }
         tr:hover { background-color: #f8fafc; }
-        
-        /* Badge badge penanda kategori otomatis */
-        .badge { padding: 5px 10px; border-radius: 20px; font-size: 0.85em; font-weight: bold; text-transform: uppercase; }
-        .badge-mandiri { background-color: #dbeafe; color: #1e40af; }
-        .badge-bidikmisi { background-color: #fef3c7; color: #92400e; }
-        .badge-prestasi { background-color: #dcfce7; color: #166534; }
-        
-        .tagihan { font-weight: bold; color: #16a34a; }
-        .gratis { font-weight: bold; color: #dc2626; font-style: italic; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>🏥 Sistem Registrasi Pembayaran UKT Mahasiswa</h1>
-    <div class="identitas">
-        <strong>Nama:</strong> Intan Indah Cahyani | <strong>Kelas:</strong> TI-1D | <strong>Database:</strong> DB_UAS_PBO_TI1D_IntanIndahCahyani
+    <div class="sidebar">
+        <h3>Menu Angkatan</h3>
+        <a href="index.php?page=dashboard" class="<?= $page == 'dashboard' ? 'active' : ''; ?>">🏠 Dashboard</a>
+        <a href="index.php?page=mandiri" class="<?= $page == 'mandiri' ? 'active' : ''; ?>">👤 Jalur Mandiri</a>
+        <a href="index.php?page=bidikmisi" class="<?= $page == 'bidikmisi' ? 'active' : ''; ?>">💳 Jalur Bidikmisi</a>
+        <a href="index.php?page=prestasi" class="<?= $page == 'prestasi' ? 'active' : ''; ?>">🏆 Jalur Prestasi</a>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>NIM</th>
-                <th>Nama Mahasiswa</th>
-                <th>Kategori Skema (Dinamis)</th>
-                <th>Tarif UKT Asli</th>
-                <th>Spesifikasi Akademik (Polimorfik)</th>
-                <th>Total Tagihan Akhir (Polimorfik)</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (empty($daftarMahasiswa)): ?>
-                <tr><td colspan="7" style="text-align:center;">Tidak ada data mahasiswa di database.</td></tr>
-            <?php else: ?>
-                <?php foreach ($daftarMahasiswa as $m): ?>
-                    <?php 
-                        // Mendeteksi nama Class secara dinamis untuk menentukan warna badge
-                        $namaKelas = get_class($m); 
-                        $badgeClass = 'badge-mandiri';
-                        $labelKategori = 'Mandiri';
-                        
-                        if ($namaKelas === 'MahasiswaBidikmisi') {
-                            $badgeClass = 'badge-bidikmisi';
-                            $labelKategori = 'Bidikmisi';
-                        } elseif ($namaKelas === 'MahasiswaPrestasi') {
-                            $badgeClass = 'badge-prestasi';
-                            $labelKategori = 'Prestasi';
-                        }
-                    ?>
-                    <tr>
-                        <td><?= $m->getId(); ?></td>
-                        <td><?= $m->getNim(); ?></td>
-                        <td><strong><?= htmlspecialchars($m->getNama()); ?></strong></td>
-                        <td>
-                            <span class="badge <?= $badgeClass; ?>"><?= $labelKategori; ?></span>
-                        </td>
-                        <td>Rp <?= number_format($m->getTarifUktNominal(), 0, ',', '.'); ?></td>
-                        
-                        <td><?= $m->tampilkanSpesifikasiAkademik(); ?></td>
-                        
-                        <td class="<?= $m->hitungTagihanSemester() == 0 ? 'gratis' : 'tagihan'; ?>">
-                            Rp <?= number_format($m->hitungTagihanSemester(), 0, ',', '.'); ?>
-                            <?= $m->hitungTagihanSemester() == 0 ? ' (Gratis)' : ''; ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </tbody>
-    </table>
-</div>
+    <div class="main-content">
+        <div class="header-panel">
+            <h2 style="margin:0; border:none; padding:0; font-size: 1.5em;">🏥 Sistem Informasi Registrasi Pembayaran UKT</h2>
+            <small style="color: #64748b;">Nama: Intan Indah Cahyani | Kelas: TI-1D</small>
+        </div>
+
+        <div class="content-box">
+            <?php
+            // ✨ PROSES INCLUDE VIEW DINAMIS YANG DIMAKSUD DOSEN
+            switch ($page) {
+                case 'mandiri':
+                    include 'v_mandiri.php';
+                    break;
+                case 'bidikmisi':
+                    include 'v_bidikmisi.php';
+                    break;
+                case 'prestasi':
+                    include 'v_prestasi.php';
+                    break;
+                default:
+                    include 'dashboard.php';
+                    break;
+            }
+            ?>
+        </div>
+    </div>
 
 </body>
 </html>
