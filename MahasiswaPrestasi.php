@@ -3,7 +3,6 @@
 require_once 'Mahasiswa.php';
 
 class MahasiswaPrestasi extends Mahasiswa {
-    // Properti tambahan spesifik
     private $namaInstansiBeasiswa;
     private $minimalIpkSyarat;
 
@@ -13,16 +12,16 @@ class MahasiswaPrestasi extends Mahasiswa {
         $this->minimalIpkSyarat = $ipk;
     }
 
-    // Mengisi metode abstrak induk (Overriding awal)
+    // 🔥 TAHAP 5 OVERRIDING: Tagihan = Potongan Beasiswa 25% dari UKT asli
     public function hitungTagihanSemester() {
-        return $this->tarifUktNominal; // Sementara mengembalikan UKT normal
+        return $this->tarifUktNominal * 0.25;
     }
 
     public function tampilkanSpesifikasiAkademik() {
         return "🏆 Beasiswa: " . $this->namaInstansiBeasiswa . " (Min IPK: " . $this->minimalIpkSyarat . ")";
     }
 
-    // 🗄️ METHOD QUERY INTERNAL SPESIFIK (Syarat Nilai 100)
+    // 🗄️ TAHAP 4: METHOD QUERY INTERNAL SPESIFIK
     public static function getDaftarPrestasi($db) {
         $query = "SELECT * FROM tabel_mahasiswa WHERE jenis_pembayaran = 'prestasi'";
         $result = $db->conn->query($query);

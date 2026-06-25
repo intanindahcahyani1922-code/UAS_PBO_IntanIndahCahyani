@@ -3,7 +3,6 @@
 require_once 'Mahasiswa.php';
 
 class MahasiswaBidikmisi extends Mahasiswa {
-    // Properti tambahan spesifik
     private $nomorKipKuliah;
     private $danaSakuSubsidi;
 
@@ -13,16 +12,16 @@ class MahasiswaBidikmisi extends Mahasiswa {
         $this->danaSakuSubsidi = $danaSaku;
     }
 
-    // Mengisi metode abstrak induk (Overriding awal)
+    // 🔥 TAHAP 5 OVERRIDING: Tagihan = 0 (Gratis Penuh ditanggung Negara)
     public function hitungTagihanSemester() {
-        return $this->tarifUktNominal; // Sementara mengembalikan UKT normal
+        return 0;
     }
 
     public function tampilkanSpesifikasiAkademik() {
         return "💳 KIP: " . $this->nomorKipKuliah . " | 💰 Uang Saku: Rp " . number_format($this->danaSakuSubsidi, 0, ',', '.');
     }
 
-    // 🗄️ METHOD QUERY INTERNAL SPESIFIK (Syarat Nilai 100)
+    // 🗄️ TAHAP 4: METHOD QUERY INTERNAL SPESIFIK
     public static function getDaftarBidikmisi($db) {
         $query = "SELECT * FROM tabel_mahasiswa WHERE jenis_pembayaran = 'bidikmisi'";
         $result = $db->conn->query($query);

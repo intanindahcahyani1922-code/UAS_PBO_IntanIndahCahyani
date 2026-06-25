@@ -3,7 +3,6 @@
 require_once 'Mahasiswa.php';
 
 class MahasiswaMandiri extends Mahasiswa {
-    // Properti tambahan spesifik
     private $golonganUkt;
     private $namaWali;
 
@@ -13,16 +12,16 @@ class MahasiswaMandiri extends Mahasiswa {
         $this->namaWali = $wali;
     }
 
-    // Mengisi metode abstrak induk (Overriding awal)
+    // 🔥 TAHAP 5 OVERRIDING: Tagihan = UKT + 100.000 (Biaya Operasional)
     public function hitungTagihanSemester() {
-        return $this->tarifUktNominal; // Sementara mengembalikan UKT normal
+        return $this->tarifUktNominal + 100000;
     }
 
     public function tampilkanSpesifikasiAkademik() {
-        return "👤 Wali: " . $this->namaWali . " | " . $this->golonganUkt;
+        return "👤 Wali: " . $this->namaWali . " ( " . $this->golonganUkt . " )";
     }
 
-    // 🗄️ METHOD QUERY INTERNAL SPESIFIK (Syarat Nilai 100)
+    // 🗄️ TAHAP 4: METHOD QUERY INTERNAL SPESIFIK
     public static function getDaftarMandiri($db) {
         $query = "SELECT * FROM tabel_mahasiswa WHERE jenis_pembayaran = 'mandiri'";
         $result = $db->conn->query($query);
