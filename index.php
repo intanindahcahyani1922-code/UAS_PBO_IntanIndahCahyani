@@ -1,19 +1,45 @@
 <?php
 // FILE: index.php
 
-// Memanggil semua berkas yang diperlukan
 require_once 'database.php';
 require_once 'MahasiswaMandiri.php';
 require_once 'MahasiswaBidikmisi.php';
 require_once 'MahasiswaPrestasi.php';
 
-// Inisialisasi koneksi database
 $db = new Database();
 
-// Mengambil data terkelompok menggunakan method query internal masing-masing subclass
-$dataMandiri = MahasiswaMandiri::getDaftarMandiri($db);
-$dataBidikmisi = MahasiswaBidikmisi::getDaftarBidikmisi($db);
-$dataPrestasi = MahasiswaPrestasi::getDaftarPrestasi($db);
+// 1. QUERY ALL: Ambil SEMUA data dari satu tabel secara dinamis (Ini yang diminta dosen)
+$query = "SELECT * FROM tabel_mahasiswa";
+$result = $db->conn->query($query);
+
+// Wadah penampung objek terkelompok
+$listMandiri = [];
+$listBidikmisi = [];
+$listPrestasi = [];
+
+// 2. PROSES DINAMIS & POLIMORFISME: Mengubah data database menjadi Objek Class Anak secara otomatis
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        
+        // Memeriksa jenis_pembayaran langsung dari database
+        if ($row['jenis_pembayaran'] == 'mandiri') {
+            $listMandiri[] = new MahasiswaMandiri(
+                $row['id_mahasiswa'], $row['nama_mahasiswa'], $row['nim'], $row['semester'], $row['tarif_ukt_nominal'],
+                $row['golongan_ukt'], $row['nama_wali']
+            );
+        } elseif ($row['jenis_pembayaran'] == 'bidikmisi') {
+            $listBidikmisi[] = new MahasiswaBidikmisi(
+                $row['id_mahasiswa'], $row['nama_mahasiswa'], $row['nim'], $row['semester'], $row['tarif_ukt_nominal'],
+                $row['nomor_kip_kuliah'], $row['dana_saku_subsidi']
+            );
+        } elseif ($row['jenis_pembayaran'] == 'prestasi') {
+            $listPrestasi[] = new MahasiswaPrestasi(
+                $row['id_mahasiswa'], $row['nama_mahasiswa'], $row['nim'], $row['semester'], $row['tarif_ukt_nominal'],
+                $row['nama_instansi_beasiswa'], $row['minimal_ipk_bersyarat']
+            );
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -38,7 +64,7 @@ $dataPrestasi = MahasiswaPrestasi::getDaftarPrestasi($db);
 <body>
 
 <div class="container">
-    <h1>🏥 Sistem Registrasi Pembayaran UKT Mahasiswa</h1>
+    <h1>🏥 Sistem Registrasi Pembayaran UKT Mahasiswa (Dinamis Sejati)</h1>
     <div class="identitas">
         <strong>Nama:</strong> Intan Indah Cahyani | <strong>Kelas:</strong> TI-1D | <strong>Database:</strong> DB_UAS_PBO_TI1D_IntanIndahCahyani
     </div>
@@ -47,31 +73,21 @@ $dataPrestasi = MahasiswaPrestasi::getDaftarPrestasi($db);
     <table>
         <thead>
             <tr>
-                <th>ID</th>
-                <th>NIM</th>
-                <th>Nama Mahasiswa</th>
-                <th>Semester</th>
-                <th>Tarif UKT Asli</th>
-                <th>Spesifikasi Akademik (Polimorfik)</th>
-                <th>Total Tagihan Akhir (Polimorfik)</th>
+                <th>ID</th><th>NIM</th><th>Nama Mahasiswa</th><th>Semester</th><th>Tarif UKT Asli</th><th>Spesifikasi Akademik (Polimorfik)</th><th>Total Tagihan Akhir (Polimorfik)</th>
             </tr>
         </thead>
         <tbody>
-            <?php if (empty($dataMandiri)): ?>
-                <tr><td colspan="7" style="text-align:center;">Tidak ada data mahasiswa mandiri.</td></tr>
-            <?php else: ?>
-                <?php foreach ($dataMandiri as $m): ?>
-                    <tr>
-                        <td><?= $m->getId(); ?></td>
-                        <td><?= $m->getNim(); ?></td>
-                        <td><strong><?= htmlspecialchars($m->getNama()); ?></strong></td>
-                        <td>Semester <?= $m->getSemester(); ?></td>
-                        <td>Rp <?= number_format($m->getTarifUktNominal(), 0, ',', '.'); ?></td>
-                        <td><?= $m->tampilkanSpesifikasiAkademik(); ?></td>
-                        <td class="tagihan">Rp <?= number_format($m->hitungTagihanSemester(), 0, ',', '.'); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            <?php endif; ?>
+            <?php foreach ($listMandiri as $m): ?>
+                <tr>
+                    <td><?= $m->getId(); ?></td>
+                    <td><?= $m->getNim(); ?></td>
+                    <td><strong><?= htmlspecialchars($m->getNama()); ?></strong></td>
+                    <td>Semester <?= $m->getSemester(); ?></td>
+                    <td>Rp <?= number_format($m->getTarifUktNominal(), 0, ',', '.'); ?></td>
+                    <td><?= $m->tampilkanSpesifikasiAkademik(); ?></td>
+                    <td class="tagihan">Rp <?= number_format($m->hitungTagihanSemester(), 0, ',', '.'); ?></td>
+                </tr>
+            <?php endforeach; ?>
         </tbody>
     </table>
 
@@ -79,33 +95,21 @@ $dataPrestasi = MahasiswaPrestasi::getDaftarPrestasi($db);
     <table>
         <thead>
             <tr>
-                <th>ID</th>
-                <th>NIM</th>
-                <th>Nama Mahasiswa</th>
-                <th>Semester</th>
-                <th>Tarif UKT Asli</th>
-                <th>Spesifikasi Akademik (Polimorfik)</th>
-                <th>Total Tagihan Akhir (Polimorfik)</th>
+                <th>ID</th><th>NIM</th><th>Nama Mahasiswa</th><th>Semester</th><th>Tarif UKT Asli</th><th>Spesifikasi Akademik (Polimorfik)</th><th>Total Tagihan Akhir (Polimorfik)</th>
             </tr>
         </thead>
         <tbody>
-            <?php if (empty($dataBidikmisi)): ?>
-                <tr><td colspan="7" style="text-align:center;">Tidak ada data mahasiswa bidikmisi.</td></tr>
-            <?php else: ?>
-                <?php foreach ($dataBidikmisi as $m): ?>
-                    <tr>
-                        <td><?= $m->getId(); ?></td>
-                        <td><?= $m->getNim(); ?></td>
-                        <td><strong><?= htmlspecialchars($m->getNama()); ?></strong></td>
-                        <td>Semester <?= $m->getSemester(); ?></td>
-                        <td>Rp <?= number_format($m->getTarifUktNominal(), 0, ',', '.'); ?></td>
-                        <td><?= $m->tampilkanSpesifikasiAkademik(); ?></td>
-                        <td class="gratis">
-                            <?= $m->hitungTagihanSemester() == 0 ? "Gratis (Rp 0)" : "Rp " . number_format($m->hitungTagihanSemester(), 0, ',', '.'); ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            <?php endif; ?>
+            <?php foreach ($listBidikmisi as $m): ?>
+                <tr>
+                    <td><?= $m->getId(); ?></td>
+                    <td><?= $m->getNim(); ?></td>
+                    <td><strong><?= htmlspecialchars($m->getNama()); ?></strong></td>
+                    <td>Semester <?= $m->getSemester(); ?></td>
+                    <td>Rp <?= number_format($m->getTarifUktNominal(), 0, ',', '.'); ?></td>
+                    <td><?= $m->tampilkanSpesifikasiAkademik(); ?></td>
+                    <td class="gratis">Rp <?= number_format($m->hitungTagihanSemester(), 0, ',', '.'); ?> (Gratis)</td>
+                </tr>
+            <?php endforeach; ?>
         </tbody>
     </table>
 
@@ -113,31 +117,21 @@ $dataPrestasi = MahasiswaPrestasi::getDaftarPrestasi($db);
     <table>
         <thead>
             <tr>
-                <th>ID</th>
-                <th>NIM</th>
-                <th>Nama Mahasiswa</th>
-                <th>Semester</th>
-                <th>Tarif UKT Asli</th>
-                <th>Spesifikasi Akademik (Polimorfik)</th>
-                <th>Total Tagihan Akhir (Polimorfik)</th>
+                <th>ID</th><th>NIM</th><th>Nama Mahasiswa</th><th>Semester</th><th>Tarif UKT Asli</th><th>Spesifikasi Akademik (Polimorfik)</th><th>Total Tagihan Akhir (Polimorfik)</th>
             </tr>
         </thead>
         <tbody>
-            <?php if (empty($dataPrestasi)): ?>
-                <tr><td colspan="7" style="text-align:center;">Tidak ada data mahasiswa prestasi.</td></tr>
-            <?php else: ?>
-                <?php foreach ($dataPrestasi as $m): ?>
-                    <tr>
-                        <td><?= $m->getId(); ?></td>
-                        <td><?= $m->getNim(); ?></td>
-                        <td><strong><?= htmlspecialchars($m->getNama()); ?></strong></td>
-                        <td>Semester <?= $m->getSemester(); ?></td>
-                        <td>Rp <?= number_format($m->getTarifUktNominal(), 0, ',', '.'); ?></td>
-                        <td><?= $m->tampilkanSpesifikasiAkademik(); ?></td>
-                        <td class="tagihan">Rp <?= number_format($m->hitungTagihanSemester(), 0, ',', '.'); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            <?php endif; ?>
+            <?php foreach ($listPrestasi as $m): ?>
+                <tr>
+                    <td><?= $m->getId(); ?></td>
+                    <td><?= $m->getNim(); ?></td>
+                    <td><strong><?= htmlspecialchars($m->getNama()); ?></strong></td>
+                    <td>Semester <?= $m->getSemester(); ?></td>
+                    <td>Rp <?= number_format($m->getTarifUktNominal(), 0, ',', '.'); ?></td>
+                    <td><?= $m->tampilkanSpesifikasiAkademik(); ?></td>
+                    <td class="tagihan">Rp <?= number_format($m->hitungTagihanSemester(), 0, ',', '.'); ?></td>
+                </tr>
+            <?php endforeach; ?>
         </tbody>
     </table>
 </div>
